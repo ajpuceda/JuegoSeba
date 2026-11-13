@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Zombiaki kontra Odkrywca 🧟🧭</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone@7.26.4/babel.min.js" crossorigin></script>
+<style>
+  body {
+    margin: 0;
+    background: #0f172a;
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Apple Color Emoji", "Segoe UI Emoji", sans-serif;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .boss {
+    display: inline-block;
+    animation: bossPulse 1.4s ease-in-out infinite;
+  }
+  @keyframes bossPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.15); }
+  }
+  .fade-in-target, #root > div > div > * {
+    animation: fadeIn 0.25s ease-out;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>
+</head>
+<body>
+<noscript>
+  <p style="color: #fff; padding: 2rem; text-align: center;">
+    Ta gra wymaga włączonego JavaScriptu! 🧟
+  </p>
+</noscript>
+<div id="root"></div>
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useRef } = React;
+
+const CONTINENTS = [
+  {
+    id: "europa",
+    name: "Europa",
+    emoji: "🏰",
+    sky: "from-sky-400 to-indigo-500",
+    questions: [
+      {
+        q: "Jaka jest stolica Polski?",
+        options: ["Warszawa", "Kraków", "Gdańsk"],
+        correct: 0,
+        fact: "Pałac Kultury i Nauki w Warszawie ma aż 237 metrów wysokości!",
+      },
+      {
+        q: "W którym mieście stoi najsłynniejsza żelazna wieża świata?",
+        options: ["W Paryżu", "W Londynie", "W Rzymie"],
+        correct: 0,
+        fact: "Wieża Eiffla latem „rośnie” nawet o 15 cm, bo metal rozszerza się w cieple!",
+      },
+      {
+        q: "Krzywa Wieża stoi w mieście Piza. W którym kraju to jest?",
+        options: ["We Włoszech", "W Grecji", "W Hiszpanii"],
+        correct: 0,
+        fact: "Wieża Pizy stoi krzywo od ponad 800 lat i wciąż się nie przewraca!",
+      },
+    ],
+  },
+  {
+    id: "azja",
+    name: "Azja",
+    emoji: "🐉",
+    sky: "from-rose-400 to-red-600",
+    questions: [
+      {
+        q: "Jak nazywa się najwyższa góra świata?",
+        options: ["Mount Everest", "Kilimandżaro", "Giewont"],
+        correct: 0,
+        fact: "Everest ma 8849 metrów — to jak 29 wież Eiffla ustawionych jedna na drugiej!",
+      },
+      {
+        q: "Wielki Mur to gigantyczny mur obronny. W którym kraju stoi?",
+        options: ["W Chinach", "W Indiach", "W Japonii"],
+        correct: 0,
+        fact: "Wielki Mur Chin ma ponad 21 000 km długości!",
+      },
+      {
+        q: "Które zwierę je bambusy i jest symbolem Chin?",
+        options: ["Panda wielka", "Kangur", "Koala"],
+        correct: 0,
+        fact: "Panda je bambusy nawet 14 godzin dziennie — i przez to prawie cały dzień chrupa!",
+      },
+    ],
+  },
+  {
+    id: "afryka",
+    name: "Afryka",
+    emoji: "🦁",
+    sky: "from-amber-400 to-orange-600",
+    questions: [
+      {
+        q: "Jak nazywa się najwyższa góra Afryki?",
+        options: ["Kilimandżaro", "Mount Everest", "Mont Blanc"],
+        correct: 0,
+        fact: "Kilimandżaro leży prawie na równiku, ale na samym szczycie leży śnieg!",
+      },
+      {
+        q: "Które zwierę jest największym ssakiem lądowym świata?",
+        options: ["Słoń afrykański", "Żyrafa", "Nosorożec"],
+        correct: 0,
+        fact: "Słonie „rozmawiają” z sobą dźwiękami, których człowiek w ogóle nie słyszy!",
+      },
+      {
+        q: "Gdzie leży wielki pustynny obszar o nazwie Sahara?",
+        options: ["W Afryce", "W Australii", "W Azji"],
+        correct: 0,
+        fact: "Sahara jest prawie tak wielka jak całe Stany Zjednoczone!",
+      },
+    ],
+  },
+  {
+    id: "ameryka-polnocna",
+    name: "Ameryka Północna",
+    emoji: "🗽",
+    sky: "from-emerald-400 to-teal-600",
+    questions: [
+      {
+        q: "W którym mieście stoi Statua Wolności?",
+        options: ["W Nowym Jorku", "W Los Angeles", "W Chicago"],
+        correct: 0,
+        fact: "Statua Wolności była prezentem od Francji dla Stanów Zjednoczonych!",
+      },
+      {
+        q: "Na fladze którego kraju widnieje czerwony liść klonu?",
+        options: ["Kanady", "Meksyku", "Kuby"],
+        correct: 0,
+        fact: "W Kanadzie leży około 60% wszystkich jezior świata!",
+      },
+      {
+        q: "Wielki Kanion to ogromna dolina w skałach. Gdzie leży?",
+        options: ["W USA", "W Brazylii", "W Peru"],
+        correct: 0,
+        fact: "Wielki Kanion jest tak głęboki, że zmieściłyby się w nim 3 wieże Eiffla jedna na drugiej!",
+      },
+    ],
+  },
+  {
+    id: "ameryka-poludniowa",
+    name: "Ameryka Południowa",
+    emoji: "🐆",
+    sky: "from-lime-400 to-green-600",
+    questions: [
+      {
+        q: "Największy las deszczowy świata — Amazonia — rośnie w…",
+        options: ["Brazylii", "Kanadzie", "Rosji"],
+        correct: 0,
+        fact: "W Amazonii żyją jaguary i… delfiny, które pływają w rzece!",
+      },
+      {
+        q: "Kapibara — największy gryzoń świata — mieszka w…",
+        options: ["Ameryce Południowej", "Europie", "Australii"],
+        correct: 0,
+        fact: "Kapibary uwielbiają pluskać się w wodzie i potrafią nawet spać w basenach!",
+      },
+      {
+        q: "Posąg Chrystusa z rozłożonymi ramionami stoi nad Rio de Janeiro. W którym kraju?",
+        options: ["W Brazylii", "W Argentynie", "W Peru"],
+        correct: 0,
+        fact: "Posąg Chrystusa Odkupiciela ma 30 metrów — to jak 10-piętrowy blok!",
+      },
+    ],
+  },
+  {
+    id: "australia",
+    name: "Australia i Oceania",
+    emoji: "🦘",
+    sky: "from-violet-400 to-purple-600",
+    questions: [
+      {
+        q: "Kangury i koale na wolności żyją w…",
+        options: ["Australii", "Afryce", "Indiach"],
+        correct: 0,
+        fact: "W Australii żyje około 50 milionów kangurów — dwa razy więcej niż ludzi!",
+      },
+      {
+        q: "Jak nazywa się słynny budynek w Sydney, który wygląda jak żagle?",
+        options: ["Opera Sydnejska", "Wielka Biblioteka", "Pałac Kangura"],
+        correct: 0,
+        fact: "Budowa Opery Sydnejskiej trwała aż 14 lat!",
+      },
+      {
+        q: "Największa rafa koralowa świata to…",
+        options: ["Wielka Rafa Koralowa", "Rafa Bahama", "Zielona Rafa"],
+        correct: 0,
+        fact: "Wielka Rafa Koralowa jest tak wielka, że widać ją z kosmosu!",
+      },
+    ],
+  },
+];
+
+const STAMPS = {
+  europa: "🇪🇺",
+  azja: "🏯",
+  afryka: "🐘",
+  "ameryka-polnocna": "🗽",
+  "ameryka-poludniowa": "🌴",
+  australia: "🦘",
+};
+
+const TOTAL_QUESTIONS = CONTINENTS.reduce((n, c) => n + c.questions.length, 0);
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function shuffledQuestions(continent) {
+  return continent.questions.map((q) => {
+    const withFlags = q.options.map((text, i) => ({ text, isCorrect: i === q.correct }));
+    const mixed = shuffle(withFlags);
+    return {
+      q: q.q,
+      options: mixed.map((o) => o.text),
+      correct: mixed.findIndex((o) => o.isCorrect),
+      fact: q.fact,
+    };
+  });
+}
+
+function rankFor(score) {
+  if (score >= 500) return { title: "Złoty Kompas — Mistrz Świata", emoji: "🏆", color: "text-yellow-600" };
+  if (score >= 350) return { title: "Srebrny Odkrywca", emoji: "🥈", color: "text-slate-500" };
+  if (score >= 200) return { title: "Brązowy Podróżnik", emoji: "🥉", color: "text-amber-700" };
+  return { title: "Uczeń Odkrywcy", emoji: "🎈", color: "text-sky-600" };
+}
+
+function App() {
+  const [screen, setScreen] = useState("intro");
+  const [name, setName] = useState("");
+  const [continentId, setContinentId] = useState(null);
+  const [quizQuestions, setQuizQuestions] = useState([]);
+  const [qIndex, setQIndex] = useState(0);
+  const [zombies, setZombies] = useState([]);
+  const [pops, setPops] = useState([]);
+  const [kills, setKills] = useState(0);
+  const [target, setTarget] = useState(10);
+  const [totalKills, setTotalKills] = useState(0);
+  const [score, setScore] = useState(0);
+  const [streak, setStreak] = useState(0);
+  const [correctTotal, setCorrectTotal] = useState(0);
+  const [wrongCount, setWrongCount] = useState(0);
+  const [pieces, setPieces] = useState([]);
+  const [selected, setSelected] = useState(null);
+  const [lastGained, setLastGained] = useState(0);
+
+  const killsRef = useRef(0);
+  const targetRef = useRef(10);
+  const transitioningRef = useRef(false);
+
+  const continent = CONTINENTS.find((c) => c.id === continentId) ?? null;
+  const allPieces = pieces.length === CONTINENTS.length;
+  const question = quizQuestions[qIndex] ?? null;
+
+  const startGate = (t) => {
+    killsRef.current = 0;
+    transitioningRef.current = false;
+    targetRef.current = t;
+    setTarget(t);
+    setKills(0);
+    setZombies([]);
+    setPops([]);
+    setScreen("action");
+  };
+
+  const startContinent = (id) => {
+    const c = CONTINENTS.find((x) => x.id === id);
+    if (!c) return;
+    setContinentId(id);
+    setQuizQuestions(shuffledQuestions(c));
+    setQIndex(0);
+    setWrongCount(0);
+    startGate(10);
+  };
+
+  const beginQuestion = () => {
+    setZombies([]);
+    setPops([]);
+    setSelected(null);
+    setScreen("question");
+  };
+
+  useEffect(() => {
+    if (screen !== "action") return;
+    const speedFactor = 1 + pieces.length * 0.06;
+    const tick = setInterval(() => {
+      setZombies((zs) =>
+        zs
+          .map((z) => ({ ...z, y: z.y + z.vy, x: z.x + Math.sin(z.y * 0.18) * 0.7 }))
+          .filter((z) => z.y < 115)
+      );
+    }, 60);
+    const spawn = setInterval(() => {
+      setZombies((zs) => {
+        if (zs.length >= 7) return zs;
+        const fast = Math.random() < 0.25;
+        const id = Math.random().toString(36).slice(2);
+        const vy =
+          (0.55 + Math.random() * 0.4) * speedFactor * (fast ? 1.7 : 1);
+        return [
+          ...zs,
+          { id, x: 4 + Math.random() * 86, y: -8, vy, fast },
+        ];
+      });
+    }, 700);
+    return () => {
+      clearInterval(tick);
+      clearInterval(spawn);
+    };
+  }, [screen, pieces.length]);
+
+  const smash = (z) => {
+    setZombies((zs) => zs.filter((x) => x.id !== z.id));
+    setPops((ps) => [...ps, { id: z.id, x: z.x, y: z.y }]);
+    setTimeout(() => setPops((ps) => ps.filter((p) => p.id !== z.id)), 450);
+    setScore((s) => s + (z.fast ? 4 : 2));
+    killsRef.current += 1;
+    setKills(killsRef.current);
+    setTotalKills((k) => k + 1);
+    if (killsRef.current >= targetRef.current && !transitioningRef.current) {
+      transitioningRef.current = true;
+      setTimeout(beginQuestion, 450);
+    }
+  };
+
+  const answer = (idx) => {
+    if (selected !== null || !question) return;
+    setSelected(idx);
+    const isCorrect = idx === question.correct;
+    if (isCorrect) {
+      const gained = 10 + (streak >= 1 ? 5 : 0);
+      setScore((s) => s + gained);
+      setLastGained(gained);
+      setStreak((s) => s + 1);
+      setCorrectTotal((c) => c + 1);
+    } else {
+      setLastGained(0);
+      setStreak(0);
+      setWrongCount((w) => w + 1);
+    }
+  };
+
+  const next = () => {
+    if (!continent || !question) return;
+    if (selected === question.correct) {
+      if (qIndex < quizQuestions.length - 1) {
+        setQIndex((i) => i + 1);
+        startGate(10);
+      } else {
+        setPieces((p) => (p.includes(continent.id) ? p : [...p, continent.id]));
+        setScreen("result");
+      }
+    } else {
+      startGate(5);
+    }
+  };
+
+  const restart = () => {
+    setScore(0);
+    setStreak(0);
+    setCorrectTotal(0);
+    setTotalKills(0);
+    setPieces([]);
+    setContinentId(null);
+    setScreen("intro");
+  };
+
+  return (
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top,#1e293b,#0f172a)] p-4 font-sans text-slate-800 sm:p-6">
+      <div className="mx-auto w-full max-w-3xl">
+        
+          {screen === "intro" && (
+            <div
+              key="intro"
+             
+             
+             
+              className="mt-6 rounded-3xl bg-white/95 p-8 shadow-xl"
+            >
+              <div className="text-center">
+                <div className="text-7xl">🧟🧭</div>
+                <h1 className="mt-4 text-3xl font-extrabold text-slate-800 sm:text-4xl">
+                  Zombiaki kontra Odkrywca
+                </h1>
+                <p className="mt-4 text-lg leading-relaxed text-slate-600">
+                  Halo, tu <b>Profesor Globus</b>! 🎙️ Zombiaki ukradły kawałki
+                  mojego magicznego kompasu i pouciekały na różne kontynenty!
+                  <br />
+                  Zanim odzyskasz każdy kawałek, musisz…
+                </p>
+                <div className="mx-auto mt-4 max-w-md rounded-2xl bg-slate-100 p-4 text-left text-base leading-relaxed">
+                  1️⃣ <b>Rozbić 10 zombiaków</b>, które spadają z nieba 💥
+                  <br />
+                  2️⃣ Pokonać <b>szefa-zombiaka</b>, odpowiadając na jego pytanie
+                  geograficzne! 🧟‍♂️
+                  <br />
+                  3️⃣ Odpowiedz dobrze = kawałek kompasu 🧩 i pieczątka do paszportu!
+                </div>
+                <p className="mt-3 text-base text-slate-500">
+                  Uwaga: błędna odpowiedź, a szef ucieknie! Rozbij wtedy 5
+                  zombiaków i spróbuj ponownie.
+                </p>
+                <div className="mx-auto mt-5 max-w-sm text-left">
+                  <label className="block text-sm font-semibold text-slate-500">
+                    Jak masz na imię, Odkrywco?
+                  </label>
+                  <input
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="np. Antoś"
+                    className="mt-2 w-full rounded-xl border-2 border-slate-200 px-4 py-3 text-lg outline-none focus:border-slate-400"
+                  />
+                </div>
+                <button
+                  onClick={() => setScreen("map")}
+                  className="mt-6 rounded-2xl bg-gradient-to-r from-red-500 to-orange-500 px-10 py-4 text-xl font-bold text-white shadow-lg transition hover:scale-105 active:scale-95"
+                >
+                  ⚡ Do boju!
+                </button>
+              </div>
+            </div>
+          )}
+
+          {screen === "map" && (
+            <div
+              key="map"
+             
+             
+             
+            >
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-white/95 px-5 py-4 shadow">
+                <div>
+                  <h2 className="text-2xl font-extrabold text-slate-800">
+                    Mapa inwazji 🗺️
+                  </h2>
+                  <p className="text-sm text-slate-500">
+                    Odkrywco {name || ""}, wybierz kontynent i rozgnieć zombiaki!
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <span className="rounded-full bg-slate-100 px-4 py-2 font-bold text-slate-700">
+                    ⭐ {score} pkt
+                  </span>
+                  <span className="rounded-full bg-amber-100 px-4 py-2 font-bold text-amber-700">
+                    🧩 {pieces.length}/6
+                  </span>
+                </div>
+              </div>
+
+              <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {CONTINENTS.map((c) => {
+                  const done = pieces.includes(c.id);
+                  return (
+                    <button
+                      key={c.id}
+                      onClick={() => startContinent(c.id)}
+                      className={`group relative rounded-2xl bg-gradient-to-br ${c.sky} p-5 text-left text-white shadow-lg ring-4 transition hover:scale-[1.03] active:scale-95 ${
+                        done ? "ring-green-400" : "ring-transparent"
+                      }`}
+                    >
+                      {done && (
+                        <span className="absolute right-3 top-3 rounded-full bg-green-500 px-3 py-1 text-sm font-bold">
+                          ✓ Kawałek!
+                        </span>
+                      )}
+                      <div className="flex items-center gap-3">
+                        <span className="text-4xl">{c.emoji}</span>
+                        <span className="text-2xl">🧟</span>
+                      </div>
+                      <div className="mt-2 text-xl font-extrabold">{c.name}</div>
+                      <div className="text-sm text-white/80">
+                        3 potyczki: zbij zombiaki + pytanie
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="mt-6 text-center">
+                {allPieces ? (
+                  <button
+                    onClick={() => setScreen("diploma")}
+                    className="rounded-2xl bg-gradient-to-r from-amber-400 to-orange-500 px-10 py-4 text-xl font-bold text-white shadow-lg transition hover:scale-105 active:scale-95"
+                  >
+                    🎓 Odbierz swój dyplom!
+                  </button>
+                ) : (
+                  <p className="text-slate-400">
+                    Odzyskaj kawałki ze wszystkich 6 kontynentów, aby zdobyć dyplom 🎓
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {screen === "action" && continent && (
+            <div
+              key="action"
+             
+             
+             
+            >
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-white/95 px-5 py-3 shadow">
+                <div className="flex items-center gap-3">
+                  <span className="text-3xl">{continent.emoji}</span>
+                  <div>
+                    <div className="text-lg font-extrabold">
+                      Broń {continent.name}!
+                    </div>
+                    <div className="text-sm text-slate-500">
+                      Klikaj zombiaki, zanim dotrą do miasta! 🏙️
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="rounded-full bg-red-100 px-4 py-2 font-bold text-red-600">
+                    💀 {kills}/{target}
+                  </span>
+                  <span className="rounded-full bg-slate-100 px-3 py-2 text-sm font-bold text-slate-700">
+                    ⭐ {score}
+                  </span>
+                </div>
+              </div>
+
+              <div className="mt-2 h-3 w-full rounded-full bg-slate-700">
+                <div
+                  className="h-3 rounded-full bg-gradient-to-r from-red-500 to-orange-400 transition-all"
+                  style={{ width: `${Math.min(100, (kills / target) * 100)}%` }}
+                />
+              </div>
+
+              <div
+                className={`relative mt-2 h-[440px] w-full overflow-hidden rounded-2xl bg-gradient-to-b ${continent.sky} shadow-xl ring-1 ring-black/10`}
+              >
+                {zombies.map((z) => (
+                  <button
+                    key={z.id}
+                    onClick={() => smash(z)}
+                    className="absolute z-10 -translate-x-1/2 select-none text-5xl transition-transform hover:scale-110 active:scale-90"
+                    style={{ left: `${z.x}%`, top: `${z.y}%` }}
+                    aria-label="Zombiak"
+                  >
+                    {z.fast ? "🧟‍♀️" : "🧟"}
+                  </button>
+                ))}
+                {pops.map((p) => (
+                  <div
+                    key={p.id}
+                    className="pointer-events-none absolute z-20 -translate-x-1/2 text-4xl"
+                    style={{ left: `${p.x}%`, top: `${p.y}%` }}
+                  >
+                    💥
+                  </div>
+                ))}
+                <div className="pointer-events-none absolute inset-x-0 bottom-0 flex h-14 items-end justify-around bg-black/25 text-3xl">
+                  <span>🏠</span>
+                  <span>🏥</span>
+                  <span>🏫</span>
+                  <span>🏠</span>
+                  <span>🏪</span>
+                  <span>🏠</span>
+                  <span>🏫</span>
+                  <span>🏠</span>
+                </div>
+              </div>
+
+              <p className="mt-2 text-center text-sm text-slate-400">
+                ⚡ Szybkie zombiaki 🧟‍♀️ dają podwójne punkty!
+              </p>
+            </div>
+          )}
+
+          {screen === "question" && continent && question && (
+            <div
+              key={`question-${continent.id}-${qIndex}`}
+             
+             
+             
+              className="mt-2 rounded-3xl bg-white/95 p-6 shadow-xl sm:p-8"
+            >
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <span
+                   
+                   
+                    className="boss text-5xl"
+                  >
+                    🧟‍♂️
+                  </span>
+                  <div>
+                    <div className="text-lg font-extrabold">
+                      Szef-zombiak z {continent.name}!
+                    </div>
+                    <div className="text-sm text-slate-500">
+                      Pytanie {qIndex + 1} z {quizQuestions.length}
+                      {streak >= 2 && (
+                        <span className="ml-2 rounded-full bg-orange-100 px-2 py-0.5 font-bold text-orange-600">
+                          🔥 Seria {streak}!
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <span className="rounded-full bg-slate-100 px-3 py-1.5 text-sm font-bold text-slate-700">
+                  ⭐ {score}
+                </span>
+              </div>
+
+              <h3 className="mt-6 text-2xl font-bold leading-snug">
+                {question.q}
+              </h3>
+
+              <div className="mt-5 grid gap-3">
+                {question.options.map((opt, idx) => {
+                  const isCorrect = idx === question.correct;
+                  const isSelected = idx === selected;
+                  let cls =
+                    "border-2 border-slate-200 bg-white hover:border-red-400 hover:bg-red-50 active:scale-[0.98]";
+                  if (selected !== null) {
+                    if (isCorrect)
+                      cls = "border-2 border-green-500 bg-green-100 text-green-800";
+                    else if (isSelected)
+                      cls = "border-2 border-rose-400 bg-rose-100 text-rose-700";
+                    else cls = "border-2 border-slate-200 bg-white opacity-50";
+                  }
+                  return (
+                    <button
+                      key={idx}
+                      onClick={() => answer(idx)}
+                      disabled={selected !== null}
+                      className={`rounded-2xl px-5 py-4 text-left text-lg font-semibold shadow-sm transition ${cls}`}
+                    >
+                      <span className="mr-2 inline-block w-7 font-black text-slate-400">
+                        {String.fromCharCode(65 + idx)}.
+                      </span>
+                      {opt}
+                    </button>
+                  );
+                })}
+              </div>
+
+              
+                {selected !== null && (
+                  <div
+                   
+                   
+                    className={`mt-5 rounded-2xl p-5 ${
+                      lastGained > 0
+                        ? "bg-green-50 ring-2 ring-green-300"
+                        : "bg-rose-50 ring-2 ring-rose-200"
+                    }`}
+                  >
+                    <div className="text-lg font-extrabold">
+                      {lastGained > 0
+                        ? `💥 Szef pokonany! +${lastGained} pkt`
+                        : "😱 Szef uciekł! Poprawna odpowiedź jest na zielono."}
+                    </div>
+                    <div className="mt-2 text-slate-600">
+                      💡 <b>Ciekawostka:</b> {question.fact}
+                    </div>
+                    <button
+                      onClick={next}
+                      className="mt-4 rounded-xl bg-red-600 px-8 py-3 text-lg font-bold text-white shadow transition hover:scale-105 active:scale-95"
+                    >
+                      {lastGained > 0
+                        ? qIndex < quizQuestions.length - 1
+                          ? "Następna potyczka ⚔️"
+                          : "Zobacz wynik 🧩"
+                        : "Rozbij 5 zombiaków i dogon szefa! ⚔️"}
+                    </button>
+                  </div>
+                )}
+              
+            </div>
+          )}
+
+          {screen === "result" && continent && (
+            <div
+              key={`result-${continent.id}`}
+             
+             
+              className="mt-6 rounded-3xl bg-white/95 p-8 text-center shadow-xl"
+            >
+              <div className="text-7xl">🧩</div>
+              <h2 className="mt-4 text-3xl font-extrabold text-emerald-700">
+                {continent.name} odzyskana!
+              </h2>
+              <p className="mt-2 text-lg text-slate-600">
+                Kawałek kompasu wrócił do Profesora Globusa, a do Twojego
+                paszportu trafia pieczątka <b>{STAMPS[continent.id]}</b>!
+              </p>
+              <p className="mt-1 text-sm text-slate-500">
+                Pomyłki podczas potyczek: {wrongCount} — im mniej, tym lepiej!
+              </p>
+              <button
+                onClick={() => setScreen("map")}
+                className="mt-6 rounded-2xl bg-slate-800 px-8 py-3 text-lg font-bold text-white shadow transition hover:scale-105 active:scale-95"
+              >
+                🗺️ Wróć na mapę
+              </button>
+            </div>
+          )}
+
+          {screen === "diploma" && (
+            <div
+              key="diploma"
+             
+             
+              className="mt-6 rounded-3xl border-8 border-double border-amber-400 bg-amber-50 p-8 text-center text-slate-800 shadow-xl"
+            >
+              <div className="text-6xl">🎓</div>
+              <h2 className="mt-3 text-3xl font-extrabold text-amber-700">
+                Dyplom Pogromcy Zombiaków
+              </h2>
+              <p className="mt-3 text-xl text-slate-700">
+                Świadectwo przyznaje się <b>{name || "Odkrywcy"}</b>,
+                <br />
+                który rozgniótł hordy zombiaków,
+                <br />
+                pokonał wszystkich szefów i odzyskał magiczny kompas!
+              </p>
+              <div className="mt-4 text-2xl font-extrabold">
+                {rankFor(score).emoji}{" "}
+                <span className={rankFor(score).color}>{rankFor(score).title}</span>
+              </div>
+              <div className="mt-3 text-lg text-slate-600">
+                ⭐ {score} punktów &nbsp;•&nbsp; 💀 {totalKills} rozbitych
+                zombiaków &nbsp;•&nbsp; ✅ {correctTotal} z {TOTAL_QUESTIONS} pytań
+              </div>
+              <div className="mt-4 flex justify-center gap-2 text-3xl">
+                {CONTINENTS.map((c) => (
+                  <span key={c.id} title={c.name}>
+                    {STAMPS[c.id]}
+                  </span>
+                ))}
+              </div>
+              <p className="mt-4 text-sm text-slate-500">
+                Pieczątki z paszportu Odkrywcy 🛂
+              </p>
+              <button
+                onClick={restart}
+                className="mt-6 rounded-2xl bg-amber-500 px-8 py-3 text-lg font-bold text-white shadow transition hover:scale-105 active:scale-95"
+              >
+                🔁 Nowa wyprawa
+              </button>
+            </div>
+          )}
+        
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(App));
+</script>
+</body>
+</html>
